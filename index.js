@@ -15,7 +15,7 @@ var resolve = function(m) {
                 }
             }
         } catch(e) {
-            throw new Error('Require ' + m + 'failed.');
+            throw new Error('Require ' + m + ' failed.');
         }
     }
     return resolved[m];
@@ -37,7 +37,7 @@ var assets = function(assets, headers) {
                 }
             },
             function(err, data) {
-                if (err) next(new Error('Failed to load assets.'));
+                if (err) return next(err);
                 res.send(data.join('\n'), headers);
             }
         );
