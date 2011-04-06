@@ -1,61 +1,47 @@
-var path = require('path'),
-    fs = require('fs'),
-    Step = require('step'),
-    resolved = {};
+var mirror = exports;
+var fs = require('fs');
 
-var resolve = function(m) {
-    if (resolved[m] === undefined) {
-        try {
-            require(m);
-            for (var key in module.parent.moduleCache) {
-                var cache = module.parent.moduleCache[key];
-                if (cache.id === m) {
-                    resolved[m] = path.dirname(cache.filename);
-                    break;
+mirror.assets = function assets(require, assets, options) {
+    if (!Array.isArray(assets)) assets = [ assets ];
+    if (!options) options = {};
+    if (!options.headers) options.headers = {'Content-Type': 'text/javascript'};
+
+    return function(req, res, next) {
+        var data = [];
+        if (!assets.length) return done();
+
+        var pending = assets.length, cancelled = false;
+        for (var i = 0; i < assets.length; i++) {
+            fs.readFile(require.resolve(assets[i]), 'utf8', function(err, file) {
+                if (err) {
+                    cancelled = true;
+                    next(err);
+                } else if (!cancelled) {
+                    if (options.wrapper) file = options.wrapper(file, assets[this]);
+                    data[this] = file;
+                    if (!--pending) done();
                 }
-            }
-        } catch(e) {
-            throw new Error('Require ' + m + ' failed.');
+            }.bind(i));
         }
-    }
-    return resolved[m];
+
+        function done() {
+            res.send(data.join('\n'), options.headers);
+        }
+    };
 };
 
-var assets = function(assets, headers) {
-    (typeof assets === 'string') && (assets = [assets]);
-    headers = headers || {'Content-Type': 'text/javascript'};
+mirror.source = function source(sources, options) {
+    if (!Array.isArray(sources)) sources = [ sources ];
+    if (!options) options = {};
+    if (!options.headers) options.headers = {'Content-Type': 'text/javascript'};
+
     return function(req, res, next) {
-        Step(
-            function() {
-                var group = this.group();
-                for (var i = 0; i < assets.length; i++) {
-                    var split = assets[i].split('/'),
-                        module = split.shift(),
-                        basepath = resolve(module),
-                        filepath = split.join('/');
-                    fs.readFile(path.join(basepath, filepath), 'utf8', group());
-                }
-            },
-            function(err, data) {
-                if (err) return next(err);
-                res.send(data.join('\n'), headers);
+        res.send(sources.map(function(file) {
+            if (options.wrapper) {
+                return options.wrapper(file.content, file.filename);
+            } else {
+                return file.content;
             }
-        );
+        }).join('\n'), options.headers);
     };
 };
-
-var file = function(asset) {
-    var split = asset.split('/'),
-        module = split.shift(),
-        filename = split.join('/');
-    return function(req, res, next) {
-        res.sendfile(path.join(resolve(module), filename));
-    };
-};
-
-module.exports = {
-    assets: assets,
-    file: file,
-    resolve: resolve
-};
-
