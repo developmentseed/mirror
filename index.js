@@ -10,6 +10,8 @@ mirror.assets = function assets(assets, options) {
         var data = [];
         if (!assets.length) return done();
 
+        if (options.sort) options.sort(assets);
+
         var pending = assets.length, cancelled = false;
         for (var i = 0; i < assets.length; i++) {
             fs.readFile(assets[i], 'utf8', function(err, file) {
