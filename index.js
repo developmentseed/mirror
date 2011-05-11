@@ -1,7 +1,7 @@
 var mirror = exports;
 var fs = require('fs');
 
-mirror.assets = function assets(require, assets, options) {
+mirror.assets = function assets(assets, options) {
     if (!Array.isArray(assets)) assets = [ assets ];
     if (!options) options = {};
     if (!options.headers) options.headers = {'Content-Type': 'text/javascript'};
@@ -12,7 +12,7 @@ mirror.assets = function assets(require, assets, options) {
 
         var pending = assets.length, cancelled = false;
         for (var i = 0; i < assets.length; i++) {
-            fs.readFile(require.resolve(assets[i]), 'utf8', function(err, file) {
+            fs.readFile(assets[i], 'utf8', function(err, file) {
                 if (err) {
                     cancelled = true;
                     next(err);
