@@ -1,10 +1,27 @@
 var mirror = exports;
 var fs = require('fs');
+var path = require('path');
+
+mirror.headers = {
+    '.js': 'text/javascript',
+    '.css': 'text/css'
+};
+
+mirror.wrappers = {
+    '.js': function(content, filename, options) {
+        return '\n;' + content + '\n;'
+    }
+};
 
 mirror.assets = function assets(assets, options) {
     if (!Array.isArray(assets)) assets = [ assets ];
     if (!options) options = {};
-    if (!options.headers) options.headers = {'Content-Type': 'text/javascript'};
+    if (!options.type) {
+        if (assets.length) options.type = path.extname(assets[0]);
+        else options.type = '.js';
+    } else if (options.type[0] !== '.') {
+        options.type = '.' + options.type;
+    }
 
     return function(req, res, next) {
         var data = [];
@@ -19,7 +36,12 @@ mirror.assets = function assets(assets, options) {
                     cancelled = true;
                     next(err);
                 } else if (!cancelled) {
-                    if (options.wrapper) file = options.wrapper(file, assets[this]);
+                    if (options.wrapper) {
+                        file = options.wrapper(file, assets[this], options);
+                    }
+                    if (mirror.wrappers[options.type]) {
+                        file = mirror.wrappers[options.type](file, assets[this], options);
+                    }
                     data[this] = file;
                     if (!--pending) done();
                 }
@@ -27,7 +49,9 @@ mirror.assets = function assets(assets, options) {
         }
 
         function done() {
-            res.send(data.join('\n'), options.headers);
+            res.send(data.join('\n'), {
+                'content-type': mirror.headers[options.type] || 'text/plain'
+            });
         }
     };
 };
