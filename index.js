@@ -22,6 +22,11 @@ mirror.assets = function assets(assets, options) {
     } else if (options.type[0] !== '.') {
         options.type = '.' + options.type;
     }
+    if (!options.maxAge) options.maxAge = 3600; // 1 hour
+    if (!options.headers) options.headers = {};
+
+    options.headers['Content-Type'] = mirror.headers[options.type] || 'text/plain';
+    options.headers['Cache-Control'] = 'max-age=' + options.maxAge;
 
     return function(req, res, next) {
         var data = [];
@@ -49,9 +54,7 @@ mirror.assets = function assets(assets, options) {
         }
 
         function done() {
-            res.send(data.join('\n'), {
-                'content-type': mirror.headers[options.type] || 'text/plain'
-            });
+            res.send(data.join('\n'), options.headers);
         }
     };
 };
@@ -59,7 +62,12 @@ mirror.assets = function assets(assets, options) {
 mirror.source = function source(sources, options) {
     if (!Array.isArray(sources)) sources = [ sources ];
     if (!options) options = {};
-    if (!options.headers) options.headers = {'Content-Type': 'text/javascript'};
+    if (!options.headers) options.headers = {};
+    if (!options.maxAge) options.maxAge = 3600; // 1 hour
+    if (!options.headers['Content-Type']) {
+        options.headers['Content-Type'] = 'text/javascript';
+    }
+    options.headers['Cache-Control'] = 'max-age=' + options.maxAge;
 
     return function(req, res, next) {
         res.send(sources.map(function(file) {
