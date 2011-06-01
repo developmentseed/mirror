@@ -12,6 +12,12 @@ function contentType(type) {
 var server = express.createServer();
 
 
+exports['test creation failure'] = function() {
+    assert.throws(function() {
+        new mirror();
+    }, /First parameter must be an array/);
+};
+
 
 var assets1 = new mirror([]);
 server.get('/assets/1', assets1.handler);
@@ -145,6 +151,81 @@ exports['test file serving 8'] = function() {
         url: '/assets/8'
     }, {
         body: '\n;alert("Hello baz");\n;\n\n;\n;alert("Hello World");\n;\n\n;alert("Hello bar");\n;\n;',
+        status: 200
+    }, contentType('application/javascript; charset=utf-8'))
+};
+
+
+// Test wrapping
+var assets9 = new mirror([
+    __dirname + '/fixtures/bar.js'
+], {
+    wrapper: function wrapFn(content, filename, options) {
+        assert.equal(content, 'alert(\"Hello bar\");');
+        assert.equal(filename, __dirname + '/fixtures/bar.js');
+        assert.equal(options.wrapper, wrapFn);
+        return 'compressed content';
+    }
+});
+server.get('/assets/9', assets9.handler);
+
+exports['test file serving 9'] = function() {
+    assert.response(server, {
+        url: '/assets/9'
+    }, {
+        body: '\n;compressed content\n;',
+        status: 200
+    }, contentType('application/javascript; charset=utf-8'))
+};
+
+
+// Test custom headers.
+var assets10 = new mirror([
+    mirror.source('\x00\x00\x00')
+], {
+    headers: { 'Content-Type': 'application/octet-stream' },
+    separator: ''
+});
+server.get('/assets/10', assets10.handler);
+
+exports['test file serving 10'] = function() {
+    assert.response(server, {
+        url: '/assets/10'
+    }, {
+        body: '\0\0\0',
+        status: 200
+    }, contentType('application/octet-stream; charset=utf-8'))
+};
+
+
+
+// Test nested wrapping
+var assets11 = new mirror([
+    __dirname + '/fixtures/bar.js',
+    new mirror([ mirror.source('content')], {
+        wrapper: function wrapFn(content, filename, options) {
+            assert.equal(content, 'content');
+            assert.equal(filename, null);
+            assert.equal(options.wrapper, wrapFn);
+            return 'inner compressed content';
+        }
+    })
+], {
+    wrapper: function wrapFn(content, filename, options) {
+        if (content === 'inner compressed content') return content;
+        assert.equal(content, 'alert(\"Hello bar\");');
+        assert.equal(filename, __dirname + '/fixtures/bar.js');
+        assert.equal(options.wrapper, wrapFn);
+        return 'compressed content';
+    }
+});
+server.get('/assets/11', assets11.handler);
+
+exports['test file serving 11'] = function() {
+    assert.response(server, {
+        url: '/assets/11'
+    }, {
+        body: '\n;compressed content\n;\n\n;inner compressed content\n;',
         status: 200
     }, contentType('application/javascript; charset=utf-8'))
 };

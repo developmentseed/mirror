@@ -3,7 +3,7 @@ var path = require('path');
 
 module.exports = exports = Mirror;
 function Mirror(assets, options) {
-    if (!Array.isArray(assets)) throw new Error('First parameter must be an array');
+    if (!Array.isArray(assets)) throw new Error('First parameter must be an array.');
     if (!options) options = {};
 
     // Content-Type
@@ -17,10 +17,17 @@ function Mirror(assets, options) {
     // Cache-Control
     if (!('maxAge' in options)) options.maxAge = 3600; // 1 hour
 
+    // Separator
+    if (!('separator' in options)) options.separator = '\n';
+
     // Setup header fields
     if (!options.headers) options.headers = {};
-    options.headers['Content-Type'] = Mirror.headers[options.type] || 'text/plain';
-    options.headers['Cache-Control'] = 'max-age=' + options.maxAge;
+    if (!('Content-Type' in options.headers)) {
+        options.headers['Content-Type'] = Mirror.headers[options.type] || 'text/plain';
+    }
+    if (!('Cache-Control' in options.headers)) {
+        options.headers['Cache-Control'] = 'max-age=' + options.maxAge;
+    }
 
     this.assets = assets;
     this.options = options;
@@ -30,6 +37,7 @@ function Mirror(assets, options) {
 
 Mirror.headers = {
     '.js': 'application/javascript',
+    '.json': 'application/json',
     '.css': 'text/css'
 };
 
@@ -60,6 +68,18 @@ Mirror.prototype.load = function(callback) {
     var pending = this.assets.length;
     var cancelled = false;
 
+    var done = function() {
+        if (this.options.wrapper) for (var i = 0; i < result.length; i++) {
+            result[i] = this.options.wrapper(result[i],
+                    typeof this.assets[i] === 'string' ? this.assets[i] : null, this.options);
+        }
+        if (Mirror.wrappers[this.options.type]) for (var i = 0; i < result.length; i++) {
+            result[i] = Mirror.wrappers[this.options.type](result[i],
+                    typeof this.assets[i] === 'string' ? this.assets[i] : null, this.options);
+        }
+        callback(null, result.join(this.options.separator));
+    }.bind(this);
+
     this.assets.forEach(function(asset, i) {
         if (typeof asset.load === 'function') asset.load(loaded);
         else fs.readFile(asset, 'utf8', loaded);
@@ -70,16 +90,6 @@ Mirror.prototype.load = function(callback) {
             if (!--pending) done();
         }
     });
-
-    var done = function() {
-        if (this.options.wrapper) for (var i = 0; i < result.length; i++) {
-            result[i] = this.options.wrapper(result[i], this.assets[i], this.options);
-        }
-        if (Mirror.wrappers[this.options.type]) for (var i = 0; i < result.length; i++) {
-            result[i] = Mirror.wrappers[this.options.type](result[i], this.assets[i], this.options);
-        }
-        callback(null, result.join('\n'));
-    }.bind(this);
 };
 
 Mirror.source = function(source) {
