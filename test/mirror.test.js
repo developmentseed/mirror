@@ -89,3 +89,62 @@ exports['test file serving 5'] = function() {
     }, contentType('text/css; charset=utf-8'))
 };
 
+
+// Test nested mirrors with first item a mirror (should return text/plain)
+var assets6 = new mirror([
+    new mirror([
+        __dirname + '/fixtures/foo.js',
+        __dirname + '/fixtures/bar.js'
+    ]),
+    __dirname + '/fixtures/baz.js'
+]);
+server.get('/assets/6', assets6.handler);
+
+exports['test file serving 6'] = function() {
+    assert.response(server, {
+        url: '/assets/6'
+    }, {
+        body: '\n;alert("Hello World");\n;\n\n;alert("Hello bar");\n;\nalert("Hello baz");',
+        status: 200
+    }, contentType('text/plain; charset=utf-8'))
+};
+
+
+// Test nested mirrors.
+var assets7 = new mirror([
+    new mirror([
+        __dirname + '/fixtures/foo.js',
+        __dirname + '/fixtures/bar.js'
+    ]),
+    __dirname + '/fixtures/baz.js'
+], { type: '.js' });
+server.get('/assets/7', assets7.handler);
+
+exports['test file serving 7'] = function() {
+    assert.response(server, {
+        url: '/assets/7'
+    }, {
+        body: '\n;\n;alert("Hello World");\n;\n\n;alert("Hello bar");\n;\n;\n\n;alert("Hello baz");\n;',
+        status: 200
+    }, contentType('application/javascript; charset=utf-8'))
+};
+
+
+// Test nested mirrors with second item a mirror (should return application/javascript)
+var assets8 = new mirror([
+    __dirname + '/fixtures/baz.js',
+    new mirror([
+        __dirname + '/fixtures/foo.js',
+        __dirname + '/fixtures/bar.js'
+    ]),
+]);
+server.get('/assets/8', assets8.handler);
+
+exports['test file serving 8'] = function() {
+    assert.response(server, {
+        url: '/assets/8'
+    }, {
+        body: '\n;alert("Hello baz");\n;\n\n;\n;alert("Hello World");\n;\n\n;alert("Hello bar");\n;\n;',
+        status: 200
+    }, contentType('application/javascript; charset=utf-8'))
+};
