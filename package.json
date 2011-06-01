@@ -1,4 +1,11 @@
 {
     "name": "mirror",
-    "version": "0.2.1"
+    "version": "0.3.0",
+    "author": "Development Seed <info@developmentseed.org> (http://www.developmentseed.org)",
+    "main": "./mirror",
+
+    "devDependencies": {
+        "express": "2.3.x",
+        "expresso" : "0.7.x"
+    }
 }
