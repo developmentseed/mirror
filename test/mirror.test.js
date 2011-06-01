@@ -229,3 +229,18 @@ exports['test file serving 11'] = function() {
         status: 200
     }, contentType('application/javascript; charset=utf-8'))
 };
+
+// Test uglifying JS
+var assets12 = new mirror([
+    __dirname + '/fixtures/sample.js'
+], { minify: true });
+server.get('/assets/12', assets12.handler);
+
+exports['test file serving 12'] = function() {
+    assert.response(server, {
+        url: '/assets/12'
+    }, {
+        body: 'function baz(a){var b=a;return b}',
+        status: 200
+    }, contentType('application/javascript; charset=utf-8'))
+};

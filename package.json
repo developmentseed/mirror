@@ -4,6 +4,10 @@
     "author": "Development Seed <info@developmentseed.org> (http://www.developmentseed.org)",
     "main": "./mirror",
 
+    "dependencies": {
+        "uglify-js": "1.0.x"
+    },
+
     "devDependencies": {
         "express": "2.3.x",
         "expresso" : "0.7.x"

@@ -1,5 +1,6 @@
 var fs = require('fs');
 var path = require('path');
+var uglify = require('uglify-js');
 
 module.exports = exports = Mirror;
 function Mirror(assets, options) {
@@ -8,10 +9,10 @@ function Mirror(assets, options) {
 
     // Content-Type
     if (!options.type) {
-        if (assets.length) options.type = path.extname(assets[0]);
+        if (assets.length) options.type = path.extname(assets[0]).toLowerCase();
         else options.type = '.js';
     } else if (options.type[0] !== '.') {
-        options.type = '.' + options.type;
+        options.type = '.' + options.type.toLowerCase();
     }
 
     // Cache-Control
@@ -19,6 +20,9 @@ function Mirror(assets, options) {
 
     // Separator
     if (!('separator' in options)) options.separator = '\n';
+
+    // Minify
+    if (!('minify' in options)) options.minify = false;
 
     // Setup header fields
     if (!options.headers) options.headers = {};
@@ -52,11 +56,25 @@ Mirror.prototype.push = function() {
 };
 
 Mirror.prototype.handler = function(req, res, next) {
-    var headers = this.options.headers;
     this.load(function(err, data) {
         if (err) next(err);
-        else res.send(data, headers);
-    });
+        else if (this.options.minify) {
+            res.send(this.minify(data), this.options.headers);
+        } else {
+            res.send(data, this.options.headers);
+        }
+    }.bind(this));
+};
+
+Mirror.prototype.minify = function(data) {
+    if (this.options.type == '.js') {
+        var ast = uglify.parser.parse(data);
+        ast = uglify.uglify.ast_mangle(ast);
+        ast = uglify.uglify.ast_squeeze(ast);
+        return uglify.uglify.gen_code(ast);
+    }
+
+    return data;
 };
 
 Mirror.prototype.load = function(callback) {
