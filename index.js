@@ -22,7 +22,7 @@ mirror.assets = function assets(assets, options) {
     } else if (options.type[0] !== '.') {
         options.type = '.' + options.type;
     }
-    if (!options.maxAge) options.maxAge = 3600; // 1 hour
+    if (!(maxAge in options)) options.maxAge = 3600; // 1 hour
     if (!options.headers) options.headers = {};
 
     options.headers['Content-Type'] = mirror.headers[options.type] || 'text/plain';
@@ -63,7 +63,7 @@ mirror.source = function source(sources, options) {
     if (!Array.isArray(sources)) sources = [ sources ];
     if (!options) options = {};
     if (!options.headers) options.headers = {};
-    if (!options.maxAge) options.maxAge = 3600; // 1 hour
+    if (!(maxAge in options)) options.maxAge = 3600; // 1 hour
     if (!options.headers['Content-Type']) {
         options.headers['Content-Type'] = 'text/javascript';
     }
