@@ -63,6 +63,19 @@ Mirror.wrappers = {
     }
 };
 
+Mirror.processors = {
+    '.js': function(content, options) {
+        if (options.minify) {
+            var ast = uglify.parser.parse(content);
+            ast = uglify.uglify.ast_mangle(ast);
+            ast = uglify.uglify.ast_squeeze(ast);
+            return uglify.uglify.gen_code(ast);
+        } else {
+            return content;
+        }
+    }
+};
+
 Mirror.prototype.push = function() {
     return this.assets.push.apply(this.assets, arguments);
 };
@@ -70,23 +83,13 @@ Mirror.prototype.push = function() {
 Mirror.prototype.handler = function(req, res, next) {
     this.load(function(err, data) {
         if (err) next(err);
-        else if (this.options.minify) {
-            res.send(this.minify(data), this.options.headers);
-        } else {
-            res.send(data, this.options.headers);
+
+        if (Mirror.processors[this.options.type]) {
+            data = Mirror.processors[this.options.type](data, this.options);
         }
+
+        res.send(data, this.options.headers);
     }.bind(this));
-};
-
-Mirror.prototype.minify = function(data) {
-    if (this.options.type == '.js') {
-        var ast = uglify.parser.parse(data);
-        ast = uglify.uglify.ast_mangle(ast);
-        ast = uglify.uglify.ast_squeeze(ast);
-        return uglify.uglify.gen_code(ast);
-    }
-
-    return data;
 };
 
 Mirror.prototype.load = function(callback) {
