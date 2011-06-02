@@ -20,7 +20,7 @@ exports['test creation failure'] = function() {
 
 
 var assets1 = new mirror([]);
-server.get('/assets/1', assets1.handler);
+server.get('/assets/1', assets1);
 
 exports['test file serving 1'] = function() {
     assert.response(server, {
@@ -35,7 +35,7 @@ exports['test file serving 1'] = function() {
 var assets2 = new mirror([
     __dirname + '/fixtures/foo.js'
 ]);
-server.get('/assets/2', assets2.handler);
+server.get('/assets/2', assets2);
 
 exports['test file serving 2'] = function() {
     assert.response(server, {
@@ -52,7 +52,7 @@ var assets3 = new mirror([
     __dirname + '/fixtures/bar.js',
     __dirname + '/fixtures/baz.js',
 ]);
-server.get('/assets/3', assets3.handler);
+server.get('/assets/3', assets3);
 
 exports['test file serving 3'] = function() {
     assert.response(server, {
@@ -66,9 +66,9 @@ exports['test file serving 3'] = function() {
 
 var assets4 = new mirror([
     __dirname + '/fixtures/foo.js',
-    mirror.source('foo();')
+    mirror('foo();')
 ]);
-server.get('/assets/4', assets4.handler);
+server.get('/assets/4', assets4);
 
 exports['test file serving 4'] = function() {
     assert.response(server, {
@@ -82,9 +82,9 @@ exports['test file serving 4'] = function() {
 
 var assets5 = new mirror([
     __dirname + '/fixtures/foo.css',
-    mirror.source('#foo { color: red; }')
+    mirror('#foo { color: red; }')
 ], { type: '.css' });
-server.get('/assets/5', assets5.handler);
+server.get('/assets/5', assets5);
 
 exports['test file serving 5'] = function() {
     assert.response(server, {
@@ -104,7 +104,7 @@ var assets6 = new mirror([
     ]),
     __dirname + '/fixtures/baz.js'
 ]);
-server.get('/assets/6', assets6.handler);
+server.get('/assets/6', assets6);
 
 exports['test file serving 6'] = function() {
     assert.response(server, {
@@ -124,7 +124,7 @@ var assets7 = new mirror([
     ]),
     __dirname + '/fixtures/baz.js'
 ], { type: '.js' });
-server.get('/assets/7', assets7.handler);
+server.get('/assets/7', assets7);
 
 exports['test file serving 7'] = function() {
     assert.response(server, {
@@ -144,7 +144,7 @@ var assets8 = new mirror([
         __dirname + '/fixtures/bar.js'
     ]),
 ]);
-server.get('/assets/8', assets8.handler);
+server.get('/assets/8', assets8);
 
 exports['test file serving 8'] = function() {
     assert.response(server, {
@@ -167,7 +167,7 @@ var assets9 = new mirror([
         return 'compressed content';
     }
 });
-server.get('/assets/9', assets9.handler);
+server.get('/assets/9', assets9);
 
 exports['test file serving 9'] = function() {
     assert.response(server, {
@@ -181,12 +181,12 @@ exports['test file serving 9'] = function() {
 
 // Test custom headers.
 var assets10 = new mirror([
-    mirror.source('\x00\x00\x00')
+    mirror('\x00\x00\x00')
 ], {
     headers: { 'Content-Type': 'application/octet-stream' },
     separator: ''
 });
-server.get('/assets/10', assets10.handler);
+server.get('/assets/10', assets10);
 
 exports['test file serving 10'] = function() {
     assert.response(server, {
@@ -202,7 +202,7 @@ exports['test file serving 10'] = function() {
 // Test nested wrapping
 var assets11 = new mirror([
     __dirname + '/fixtures/bar.js',
-    new mirror([ mirror.source('content')], {
+    new mirror([ mirror('content')], {
         wrapper: function wrapFn(content, filename, options) {
             assert.equal(content, 'content');
             assert.equal(filename, null);
@@ -219,7 +219,7 @@ var assets11 = new mirror([
         return 'compressed content';
     }
 });
-server.get('/assets/11', assets11.handler);
+server.get('/assets/11', assets11);
 
 exports['test file serving 11'] = function() {
     assert.response(server, {
@@ -234,7 +234,7 @@ exports['test file serving 11'] = function() {
 var assets12 = new mirror([
     __dirname + '/fixtures/sample.js'
 ], { minify: true });
-server.get('/assets/12', assets12.handler);
+server.get('/assets/12', assets12);
 
 exports['test file serving 12'] = function() {
     assert.response(server, {

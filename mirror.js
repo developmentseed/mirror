@@ -4,7 +4,15 @@ var uglify = require('uglify-js');
 
 module.exports = exports = Mirror;
 function Mirror(assets, options) {
-    if (!Array.isArray(assets)) throw new Error('First parameter must be an array.');
+    if (!Array.isArray(assets)) {
+        if (this instanceof Mirror) {
+            throw new Error('First parameter must be an array.');
+        } else return {
+            load: function(callback) {
+                callback(null, '' + assets);
+            }
+        };
+    }
     if (!options) options = {};
 
     // Content-Type
@@ -35,8 +43,12 @@ function Mirror(assets, options) {
 
     this.assets = assets;
     this.options = options;
+
     this.handler = this.handler.bind(this);
-    this.load = this.load.bind(this);
+    this.handler.load = this.load.bind(this);
+    this.handler.mirror = this;
+
+    return this.handler;
 };
 
 Mirror.headers = {
@@ -108,12 +120,4 @@ Mirror.prototype.load = function(callback) {
             if (!--pending) done();
         }
     });
-};
-
-Mirror.source = function(source) {
-    return {
-        load: function(callback) {
-            callback(null, source);
-        }
-    };
 };
