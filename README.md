@@ -1,55 +1,54 @@
-Mirror
-------
-Mirror node.js module files to the browser. Simplifies application development
-when writing js code that is used both client-side and server-side.
+# Mirror
 
-### Tested with
-
-- joyent node v0.2.6
-- creationix step v0.0.4
-- visionmedia express 1.0.7
+Aggregates JavaScript, CSS and any other text files for serving them to browsers with [express](http://expressjs.com/). Supports wrapping and postprocessing outputs. A *mirror* can contain files, plain source code or other mirrors.
 
 ### Usage
 
-Mirror works by resolving module paths using the node `module` object cache.
-Module files to be mirrored should be represented by a string path:
+```javascript
+var mirror = require('mirror');
 
-    [module]/[filepath]
+// Mirror guesses the MIME type based on the first file's extension.
+var styles = new mirror([
+    __dirname + '/assets/main.css',
+    __dirname + '/assets/layout.css'
+]);
 
-- `module` is the module name as would be used when calling `require()`.
-- `filepath` is the path to the desired file relative to the module root
-  directory.
+// Proving direct source input requires specifying the MIME type manually.
+var configuration = new mirror([
+    // Mirror automatically inserts line breaks and semicolons before/after
+    // each item in a "js" type mirror.
+    mirror('var basepath = "/"'),
+    mirror('var config = ' + JSON.stringify(config)),
 
-Files can be mirrored directly or packaged together in the case javascript,
-css or other text files.
+    // You can add functions to the mirror. They will be called on each request.
+    mirror(function(options, req, res) {
+        return 'var url = ' + JSON.stringify(req.url);
+    })
+], {
+    type: 'js',
+    maxAge: 60  // Only cache configuration file for 60 seconds.
+});
 
-    // Express middleware that serves file described by <asset>
-    mirror.file( <asset> );
+// Store the array of files and remove or add files on-the-fly.
+var files = [
+    require.resolve('underscore'),
+    require.resolve('backbone'),
+    require.resolve('mymodule/client.js'),
 
-    // Express middleware that serves assets joined (\n). [headers] is an
-    // optional headers object, defaults to that suitable for javascript.
-    mirror.asset( [ <asset1>, <asset2>, ... <assetn> ], [headers] );
+    // Add other mirrors
+    configuration
+];
 
-### Example
+// Add the mirrors to your express server.
+app.get('/assets/style.css', styles);
+app.get('/assets/configuration.json', configuration);
+app.get('/assets/scripts.js', new mirror(files, { minify: true }));
+```
 
-Create an Express server, add a `vendor.js` package of assets and serve some
-module css/image files:
-
-    var server = require('express').createServer();
-    var mirror = require('mirror');
-
-    server.get('/vendor.js', mirror.assets([
-        'underscore/underscore.js',
-        'backbone/backbone.js',
-        'bones/bones.js',
-        'bones-admin/bones-admin.js'
-    ]));
-    server.get('/bones-admin.css', mirror.file('bones-admin/bones-admin.css'));
-    server.get('/bones-admin.png', mirror.file('bones-admin/bones-admin.png'));
-
-    server.listen(8889);
+**NOTE:** Mirror loads the requested files from disk for every request. It is meant to run behind a reverse proxy that caches. You can control the cache time with `maxAge` (in seconds) in the options hash.
 
 ### Authors
 
-- [Young Hahn](http://github.com/yhahn)
+- [Young Hahn](https://github.com/yhahn)
+- [Konstantin Käfer](https://github.com/kkaefer)
 
