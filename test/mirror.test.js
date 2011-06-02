@@ -28,7 +28,7 @@ exports['test file serving 1'] = function() {
     }, {
         body: '',
         status: 200
-    }, contentType('application/javascript; charset=utf-8'))
+    }, contentType('text/plain; charset=utf-8'))
 };
 
 

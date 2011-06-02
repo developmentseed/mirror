@@ -14,12 +14,19 @@ function Mirror(assets, options) {
             filename: options || null
         };
     }
+
+    // Make `instanceof Mirror` work and allow recursive embedding.
+    assets.__proto__ = this;
+
     if (!options) options = {};
 
     // Content-Type
     if (!options.type) {
-        if (assets.length) options.type = path.extname(assets[0]).toLowerCase();
-        else options.type = '.js';
+        if (assets.length && !assets[0].join) {
+            options.type = path.extname(assets[0]).toLowerCase();
+        } else {
+            options.type = '.txt';
+        }
     } else if (options.type[0] !== '.') {
         options.type = '.' + options.type.toLowerCase();
     }
@@ -47,11 +54,11 @@ function Mirror(assets, options) {
     this.handler = this.handler.bind(this);
     this.content = this.content.bind(this);
 
-    this.handler.mirror = this;
-    this.handler.content = this.content;
-
-    return this.handler;
+    return assets;
 };
+
+// Make `instanceof Array` work on return values.
+Mirror.prototype.__proto__ = Array.prototype;
 
 Mirror.defaults = {
     maxAge: env === 'production' ? 3600 : 0,
@@ -82,6 +89,13 @@ Mirror.processors = {
             return content;
         }
     }
+};
+
+// Allow adding the files "array" as a express callback directly. This is a
+// shortcut that only works with express because it calls files.call().
+// In new code, use files.handler instead.
+Mirror.prototype.call = function(_, req, res, next) {
+    return this.handler(req, res, next);
 };
 
 Mirror.prototype.handler = function(req, res, next) {
