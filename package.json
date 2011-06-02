@@ -1,6 +1,6 @@
 {
     "name": "mirror",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "author": "Development Seed <info@developmentseed.org> (http://www.developmentseed.org)",
     "main": "./mirror",
 
