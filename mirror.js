@@ -42,8 +42,8 @@ function Mirror(assets, options) {
 
     this.assets = assets;
     this.options = options;
-
     this.handler = this.handler.bind(this);
+
     this.handler.content = this.content.bind(this);
     this.handler.mirror = this;
 
@@ -73,10 +73,6 @@ Mirror.processors = {
             return content;
         }
     }
-};
-
-Mirror.prototype.push = function() {
-    return this.assets.push.apply(this.assets, arguments);
 };
 
 Mirror.prototype.handler = function(req, res, next) {
