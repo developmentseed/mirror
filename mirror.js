@@ -7,10 +7,12 @@ function Mirror(assets, options) {
     if (!Array.isArray(assets)) {
         if (this instanceof Mirror) {
             throw new Error('First parameter must be an array.');
-        } else return {
-            load: function(callback) {
-                callback(null, '' + assets);
+        } else if (typeof assets === 'function') return {
+            load: function(callback, req, res) {
+                callback(null, '' + assets(options, req, res));
             }
+        }; else return {
+            load: function(callback) { callback(null, '' + assets); }
         };
     }
     if (!options) options = {};
@@ -89,10 +91,10 @@ Mirror.prototype.handler = function(req, res, next) {
         }
 
         res.send(data, this.options.headers);
-    }.bind(this));
+    }.bind(this), req, res);
 };
 
-Mirror.prototype.load = function(callback) {
+Mirror.prototype.load = function(callback, req, res) {
     if (!this.assets.length) return callback(null, '');
 
     if (this.options.sort) this.options.sort(this.assets);
@@ -114,7 +116,7 @@ Mirror.prototype.load = function(callback) {
     }.bind(this);
 
     this.assets.forEach(function(asset, i) {
-        if (typeof asset.load === 'function') asset.load(loaded);
+        if (typeof asset.load === 'function') asset.load(loaded, req, res);
         else fs.readFile(asset, 'utf8', loaded);
         function loaded(err, data) {
             if (cancelled) { return; }

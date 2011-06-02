@@ -244,3 +244,20 @@ exports['test file serving 12'] = function() {
         status: 200
     }, contentType('application/javascript; charset=utf-8'))
 };
+
+var assets13 = new mirror([
+    mirror('#foo { color: red; }'),
+    mirror(function(options, req, res) {
+        return '/*' + req.url + '*/ #bar { color: blue; }';
+    })
+], { type: '.css' });
+server.get('/assets/13', assets13);
+
+exports['test file serving 13'] = function() {
+    assert.response(server, {
+        url: '/assets/13'
+    }, {
+        body: '#foo { color: red; }\n/*/assets/13*/ #bar { color: blue; }',
+        status: 200
+    }, contentType('text/css; charset=utf-8'))
+};
