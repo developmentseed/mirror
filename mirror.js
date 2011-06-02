@@ -1,3 +1,5 @@
+var env = process.env.NODE_ENV || 'development';
+
 var fs = require('fs');
 var path = require('path');
 var uglify = require('uglify-js');
@@ -23,13 +25,13 @@ function Mirror(assets, options) {
     }
 
     // Cache-Control
-    if (!('maxAge' in options)) options.maxAge = 3600; // 1 hour
+    if (!('maxAge' in options)) options.maxAge = Mirror.defaults.maxAge; // 1 hour
 
     // Separator
-    if (!('separator' in options)) options.separator = '\n';
+    if (!('separator' in options)) options.separator = Mirror.defaults.separator;
 
     // Minify
-    if (!('minify' in options)) options.minify = false;
+    if (!('minify' in options)) options.minify = Mirror.defaults.minify;
 
     // Setup header fields
     if (!options.headers) options.headers = {};
@@ -43,11 +45,18 @@ function Mirror(assets, options) {
     this.assets = assets;
     this.options = options;
     this.handler = this.handler.bind(this);
+    this.content = this.content.bind(this);
 
-    this.handler.content = this.content.bind(this);
     this.handler.mirror = this;
+    this.handler.content = this.content;
 
     return this.handler;
+};
+
+Mirror.defaults = {
+    maxAge: env === 'production' ? 3600 : 0,
+    separator: '\n',
+    minify: env === 'production'
 };
 
 Mirror.headers = {
@@ -92,9 +101,8 @@ function filename(obj) {
 }
 
 Mirror.prototype.content = function(callback, req, res) {
-    if (!this.assets.length) return callback(null, '');
-
     if (this.options.sort) this.options.sort(this.assets);
+    if (!this.assets.length) return callback(null, '');
 
     var result = [];
     var pending = this.assets.length;
