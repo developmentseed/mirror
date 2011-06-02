@@ -247,8 +247,8 @@ exports['test file serving 12'] = function() {
 
 var assets13 = new mirror([
     mirror('#foo { color: red; }'),
-    mirror(function(options, req, res) {
-        return '/*' + req.url + '*/ #bar { color: blue; }';
+    mirror(function(callback, req, res) {
+        callback(null, '/*' + req.url + '*/ #bar { color: blue; }');
     })
 ], { type: '.css' });
 server.get('/assets/13', assets13);

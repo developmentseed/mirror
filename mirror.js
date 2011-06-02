@@ -7,12 +7,9 @@ function Mirror(assets, options) {
     if (!Array.isArray(assets)) {
         if (this instanceof Mirror) {
             throw new Error('First parameter must be an array.');
-        } else if (typeof assets === 'function') return {
-            load: function(callback, req, res) {
-                callback(null, '' + assets(options, req, res));
-            }
-        }; else return {
-            load: function(callback) { callback(null, '' + assets); }
+        } else return {
+            content: assets,
+            filename: options || null
         };
     }
     if (!options) options = {};
@@ -47,7 +44,7 @@ function Mirror(assets, options) {
     this.options = options;
 
     this.handler = this.handler.bind(this);
-    this.handler.load = this.load.bind(this);
+    this.handler.content = this.content.bind(this);
     this.handler.mirror = this;
 
     return this.handler;
@@ -83,8 +80,8 @@ Mirror.prototype.push = function() {
 };
 
 Mirror.prototype.handler = function(req, res, next) {
-    this.load(function(err, data) {
-        if (err) next(err);
+    this.content(function(err, data) {
+        if (err) return next(err);
 
         if (Mirror.processors[this.options.type]) {
             data = Mirror.processors[this.options.type](data, this.options);
@@ -94,7 +91,11 @@ Mirror.prototype.handler = function(req, res, next) {
     }.bind(this), req, res);
 };
 
-Mirror.prototype.load = function(callback, req, res) {
+function filename(obj) {
+    return typeof obj === 'string' ? obj : obj.filename || null;
+}
+
+Mirror.prototype.content = function(callback, req, res) {
     if (!this.assets.length) return callback(null, '');
 
     if (this.options.sort) this.options.sort(this.assets);
@@ -104,20 +105,27 @@ Mirror.prototype.load = function(callback, req, res) {
     var cancelled = false;
 
     var done = function() {
+        cancelled = true;
         if (this.options.wrapper) for (var i = 0; i < result.length; i++) {
             result[i] = this.options.wrapper(result[i],
-                    typeof this.assets[i] === 'string' ? this.assets[i] : null, this.options);
+                    filename(this.assets[i]), this.options);
         }
         if (Mirror.wrappers[this.options.type]) for (var i = 0; i < result.length; i++) {
             result[i] = Mirror.wrappers[this.options.type](result[i],
-                    typeof this.assets[i] === 'string' ? this.assets[i] : null, this.options);
+                    filename(this.assets[i]), this.options);
         }
         callback(null, result.join(this.options.separator));
     }.bind(this);
 
     this.assets.forEach(function(asset, i) {
-        if (typeof asset.load === 'function') asset.load(loaded, req, res);
-        else fs.readFile(asset, 'utf8', loaded);
+        if (typeof asset.content === 'function') {
+            asset.content(loaded, req, res);
+        } else if (typeof asset.content !== 'undefined') {
+            loaded(null, '' + asset.content);
+        } else {
+            fs.readFile(asset, 'utf8', loaded);
+        }
+
         function loaded(err, data) {
             if (cancelled) { return; }
             if (err) { cancelled = true; return callback(err); }
@@ -125,4 +133,15 @@ Mirror.prototype.load = function(callback, req, res) {
             if (!--pending) done();
         }
     });
+};
+
+// Compatibility to 0.2
+Mirror.assets = function(assets, options) {
+    if (!Array.isArray(assets)) assets = [ assets ];
+    return new Mirror(assets, options);
+};
+
+Mirror.source = function(sources, options) {
+    if (!Array.isArray(sources)) sources = [ sources ];
+    return new Mirror(sources, options);
 };

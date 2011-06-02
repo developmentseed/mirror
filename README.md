@@ -21,8 +21,8 @@ var configuration = new mirror([
     mirror('var config = ' + JSON.stringify(config)),
 
     // You can add functions to the mirror. They will be called on each request.
-    mirror(function(options, req, res) {
-        return 'var url = ' + JSON.stringify(req.url);
+    mirror(function(callback, req, res) {
+        callback(null, 'var url = ' + JSON.stringify(req.url));
     })
 ], {
     type: 'js',
