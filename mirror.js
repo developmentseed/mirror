@@ -32,7 +32,7 @@ function Mirror(assets, options) {
     }
 
     // Cache-Control
-    if (!('maxAge' in options)) options.maxAge = Mirror.defaults.maxAge; // 1 year
+    if (!('maxAge' in options)) options.maxAge = Mirror.defaults.maxAge; // 2 weeks
 
     // Separator
     if (!('separator' in options)) options.separator = Mirror.defaults.separator;
@@ -61,7 +61,7 @@ function Mirror(assets, options) {
 Mirror.prototype.__proto__ = Array.prototype;
 
 Mirror.defaults = {
-    maxAge: env === 'production' ? 31536000 : 0,
+    maxAge: env === 'production' ? 1209600 : 0,
     separator: '\n',
     minify: env === 'production'
 };
