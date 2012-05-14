@@ -91,6 +91,7 @@ Mirror.processors = {
     }
 };
 
+// @deprecated: express >= 2.4.5 removed .call(self) for route callbacks.
 // Allow adding the files "array" as a express callback directly. This is a
 // shortcut that only works with express because it calls files.call().
 // In new code, use files.handler instead.

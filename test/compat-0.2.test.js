@@ -19,7 +19,7 @@ var assets3 = mirror.assets([
     __dirname + '/fixtures/bar.js',
     __dirname + '/fixtures/baz.js',
 ]);
-server.get('/assets/3', assets3);
+server.get('/assets/3', assets3.handler);
 
 exports['test file serving 3'] = function() {
     assert.response(server, {
@@ -40,7 +40,7 @@ var assets13 = mirror.source([
         content: '#bar { color: blue; }'
     }
 ], { type: '.css' });
-server.get('/assets/13', assets13);
+server.get('/assets/13', assets13.handler);
 
 exports['test file serving 13'] = function() {
     assert.response(server, {
