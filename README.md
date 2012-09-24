@@ -40,9 +40,9 @@ var files = [
 ];
 
 // Add the mirrors to your express server.
-app.get('/assets/style.css', styles);
-app.get('/assets/configuration.json', configuration);
-app.get('/assets/scripts.js', new mirror(files, { minify: true }));
+app.get('/assets/style.css', styles.handler);
+app.get('/assets/configuration.json', configuration.handler);
+app.get('/assets/scripts.js', (new mirror(files, { minify: true })).handler);
 ```
 
 **NOTE:** Mirror loads the requested files from disk for every request. It is meant to run behind a reverse proxy that caches. You can control the cache time with `maxAge` (in seconds) in the options hash.
